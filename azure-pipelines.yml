@@ -1,22 +1,17 @@
 trigger:
-  - main
+- main
 
 pool:
-  name: LocalWindows
-  demands:
-    - Agent.Name -equals mohitk
+  name:   # your self-hosted agent name
 
 steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '18.x'
-    displayName: 'Install Node.js'
+- checkout: self
 
-  - script: |
-      npm install
-      npm run build
-    displayName: 'Install and Build App'
-
-  - script: |
-      echo "✅ Build completed by agent $(Agent.Name)"
-    displayName: 'Print Agent Info'
+- task: Gradle@2
+  inputs:
+    workingDirectory: 'src'
+    gradleWrapperFile: 'src/gradlew'
+    tasks: 'build'
+    publishJUnitResults: true
+    testResultsFiles: '**/TEST-*.xml'
+  displayName: 'Build with Gradle Wrapper'
