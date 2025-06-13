@@ -1,10 +1,19 @@
-# Use multi-stage build to reduce image size
-FROM maven:3.8.6-openjdk-17 AS build
-WORKDIR /workspace
-COPY src .
-RUN mvn clean package -DskipTests
+# Stage 1: Build the application using Gradle
+FROM gradle:8.5.0-jdk17 AS build
+WORKDIR /app
 
-FROM openjdk:17-jdk-slim
-COPY --from=build /workspace/target/*.jar app.jar
+# Copy entire project into container
+COPY . .
+
+# Run Gradle build without daemon
+RUN gradle build --no-daemon
+
+# Stage 2: Run the application with minimal JDK
+FROM eclipse-temurin:17-jdk
+WORKDIR /app
+
+# Copy the built jar from the previous stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
