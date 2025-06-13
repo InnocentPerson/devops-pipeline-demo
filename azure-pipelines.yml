@@ -16,7 +16,7 @@ steps:
   inputs:
     workingDirectory: 'src'
     gradleWrapperFile: 'src/gradlew'
-    tasks: >
+    tasks: |
       sonarqube
       -Dsonar.projectKey=$(SONARQUBE_PROJECT_KEY)
       -Dsonar.projectName=$(SONARQUBE_PROJECT_NAME)
