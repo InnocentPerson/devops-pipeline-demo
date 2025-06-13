@@ -5,14 +5,13 @@ pool:
   name: LocalWindows  # Your self-hosted agent name
 
 variables:
-- group: sonarqube-settings  # Add this line
+- group: SonarQube  # This securely loads the token SONARQUBE_TOKEN
 - name: SONARQUBE_PROJECT_KEY
   value: 'devops-pipeline-demo'
 - name: SONARQUBE_PROJECT_NAME
   value: 'devops-pipeline-demo'
 - name: SONARQUBE_HOST_URL
   value: 'http://localhost:9000'
-
 
 steps:
 - checkout: self
@@ -27,5 +26,4 @@ steps:
       -Dsonar.projectKey=$(SONARQUBE_PROJECT_KEY)
       -Dsonar.projectName=$(SONARQUBE_PROJECT_NAME)
       -Dsonar.host.url=$(SONARQUBE_HOST_URL)
-      -Dsonar.token=$(SONARQUBE_TOKEN)   # ✅ Use sonar.token (not sonar.login)
-
+      -Dsonar.token=$(SONARQUBE_TOKEN)
