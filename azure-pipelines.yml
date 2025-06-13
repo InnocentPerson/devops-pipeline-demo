@@ -13,13 +13,15 @@ steps:
 - checkout: self
 
 - task: Gradle@2
+  displayName: 'Gradle Build and SonarQube Analysis'
   inputs:
+    gradleWrapperFile: 'src/gradlew.bat'
     workingDirectory: 'src'
-    gradleWrapperFile: 'src/gradlew'
-    tasks: |
-      sonarqube
+    tasks: 'sonarqube build'
+    options: >
+      --warning-mode all
       -Dsonar.projectKey=$(SONARQUBE_PROJECT_KEY)
       -Dsonar.projectName=$(SONARQUBE_PROJECT_NAME)
       -Dsonar.host.url=$(SONARQUBE_HOST_URL)
       -Dsonar.login=$(SONARQUBE_TOKEN)
-  displayName: 'Gradle Build and SonarQube Analysis'
+
