@@ -1,7 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: petclinic
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: petclinic
+  labels:
+    app: petclinic
 spec:
   replicas: 2
   selector:
@@ -13,19 +28,32 @@ spec:
         app: petclinic
     spec:
       containers:
-      - name: petclinic
-        image: your-dockerhub-username/petclinic:latest
-        ports:
-        - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: petclinic-service
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8080
-  selector:
-    app: petclinic
+        - name: petclinic
+          image: #{dockerImage}#:#{tag}#  # Azure DevOps syntax
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: postgres
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/petclinic
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: demo-db
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: demo-db
+                  key: password
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 45
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30

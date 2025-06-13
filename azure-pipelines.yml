@@ -1,0 +1,22 @@
+trigger:
+  - main
+
+pool:
+  name: LocalWindows
+  demands:
+    - Agent.Name -equals mohitk
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '18.x'
+    displayName: 'Install Node.js'
+
+  - script: |
+      npm install
+      npm run build
+    displayName: 'Install and Build App'
+
+  - script: |
+      echo "✅ Build completed by agent $(Agent.Name)"
+    displayName: 'Print Agent Info'
