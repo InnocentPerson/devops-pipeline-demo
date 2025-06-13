@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: LocalWindows  # your self-hosted agent name
+  name: LocalWindows  # Your self-hosted agent name
 
 variables:
   SONARQUBE_PROJECT_KEY: 'devops-pipeline-demo'
@@ -22,6 +22,4 @@ steps:
       -Dsonar.projectKey=$(SONARQUBE_PROJECT_KEY)
       -Dsonar.projectName=$(SONARQUBE_PROJECT_NAME)
       -Dsonar.host.url=$(SONARQUBE_HOST_URL)
-      -Dsonar.login=$(SONARQUBE_TOKEN)
-
-
+      -Dsonar.token=$(SONARQUBE_TOKEN)
