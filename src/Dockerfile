@@ -2,8 +2,8 @@
 FROM gradle:8.5.0-jdk17 AS build
 WORKDIR /app
 
-# Copy your actual Gradle project files (adjusted for your structure)
-COPY src/ .  
+# ✅ Copy everything from the current directory (src/)
+COPY . .
 
 # Make gradlew executable
 RUN chmod +x ./gradlew
