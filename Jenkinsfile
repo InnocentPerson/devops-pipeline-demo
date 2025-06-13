@@ -2,18 +2,13 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven-3.8.6'
-        jdk 'jdk21'  // Confirmed correct JDK tool name
+        gradle 'Gradle-8.5'      // ✅ Make sure this tool is configured in Jenkins
+        jdk 'jdk21'              // ✅ Confirmed in Jenkins tools
     }
 
     environment {
-        // Use your Docker Hub username
-        DOCKER_IMAGE = "striverr/petclinic:${env.BUILD_NUMBER}"
-        
-        // Use consistent project key across all tools
+        DOCKER_IMAGE = "striverr/devops-pipeline-demo:${env.BUILD_NUMBER}"
         SONAR_PROJECT_KEY = "devops-pipeline-demo"
-        
-        // Kubernetes config paths
         K8S_DIR = "src/k8s"
     }
 
@@ -24,17 +19,16 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Build & Test with Gradle') {
             steps {
-                bat 'cd src && mvn clean package'
+                bat 'cd src && gradlew.bat build'
             }
         }
 
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    // Use project key from environment variable
-                    bat "cd src && mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
+                    bat "cd src && gradlew.bat sonarqube -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
                 }
             }
         }
@@ -55,12 +49,9 @@ pipeline {
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_PASS'
                     )]) {
-                        // Use environment variables properly in Windows
                         bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
+                        bat "docker build -t ${DOCKER_IMAGE} src"
                     }
-                    
-                    // Build from root directory where Dockerfile exists
-                    bat "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
@@ -70,9 +61,8 @@ pipeline {
                 script {
                     docker.withRegistry('', 'docker-hub-creds') {
                         docker.image("${DOCKER_IMAGE}").push()
+                        docker.image("${DOCKER_IMAGE}").push('latest')
                     }
-                    // Also push as 'latest'
-                    docker.image("${DOCKER_IMAGE}").push('latest')
                 }
             }
         }
@@ -89,19 +79,16 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
-            // Clean up workspace
             cleanWs()
         }
         success {
-            // Add success notification (Slack/Email)
-            echo "Pipeline succeeded!"
+            echo "✅ Pipeline succeeded!"
         }
         failure {
-            // Add failure notification
-            echo "Pipeline failed!"
+            echo "❌ Pipeline failed!"
         }
     }
 }
