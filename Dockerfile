@@ -2,24 +2,21 @@
 FROM gradle:8.5.0-jdk17 AS build
 WORKDIR /app
 
-# Copy project files into the container
-COPY . .
+# Copy only the src directory contents
+COPY src/ .  # 👈 this is key
 
-# Ensure wrapper script is executable (especially for Linux)
+# Make gradlew executable
 RUN chmod +x ./gradlew
 
-# Use Gradle Wrapper to build the project
+# Run the build using the wrapper
 RUN ./gradlew build --no-daemon
 
 # Stage 2: Run the application with minimal JDK
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copy the built JAR from the build stage
+# Copy the built jar from previous stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expose the app port
 EXPOSE 8080
-
-# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
