@@ -5,7 +5,7 @@ pool:
   name: LocalWindows  # Your self-hosted agent name
 
 variables:
-- group: SonarQube  # This securely loads the token SONARQUBE_TOKEN
+- group: SonarQube  # Secure variable group containing SONARQUBE_TOKEN
 - name: SONARQUBE_PROJECT_KEY
   value: 'devops-pipeline-demo'
 - name: SONARQUBE_PROJECT_NAME
@@ -16,6 +16,7 @@ variables:
 steps:
 - checkout: self
 
+# Build using Gradle Wrapper and run SonarQube analysis
 - task: Gradle@2
   displayName: 'Gradle Build and SonarQube Analysis'
   inputs:
@@ -27,3 +28,26 @@ steps:
       -Dsonar.projectName=$(SONARQUBE_PROJECT_NAME)
       -Dsonar.host.url=$(SONARQUBE_HOST_URL)
       -Dsonar.token=$(SONARQUBE_TOKEN)
+
+# Build Docker image
+- task: Docker@2
+  displayName: 'Build Docker Image'
+  inputs:
+    containerRegistry: docker-hub-creds  # Replace with your Azure DevOps service connection name
+    repository: 'striverr/devops-pipeline-demo'  # Docker Hub repo name
+    command: 'build'
+    Dockerfile: 'Dockerfile'
+    tags: |
+      latest
+      $(Build.BuildId)
+
+# Push Docker image to Docker Hub
+- task: Docker@2
+  displayName: 'Push Docker Image'
+  inputs:
+    containerRegistry: docker-hub-creds  # Replace with your service connection name
+    repository: 'striverr/devops-pipeline-demo'
+    command: 'push'
+    tags: |
+      latest
+      $(Build.BuildId)
