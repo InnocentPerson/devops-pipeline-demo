@@ -96,8 +96,13 @@ jacoco {
   toolVersion = "0.8.10"
 }
 
+<<<<<<< HEAD
 tasks.register('jacocoTestReport', JacocoReport) {
   dependsOn tasks.test
+=======
+tasks.named('jacocoTestReport') {
+  dependsOn test
+>>>>>>> 0d19b2c2aa2e693a02b756d4b79d96f1062fca02
   reports {
     xml.required = true
     html.required = true
@@ -106,3 +111,7 @@ tasks.register('jacocoTestReport', JacocoReport) {
   classDirectories.setFrom files(sourceSets.main.output)
   executionData.setFrom fileTree(buildDir).include("/jacoco/test.exec")
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0d19b2c2aa2e693a02b756d4b79d96f1062fca02
