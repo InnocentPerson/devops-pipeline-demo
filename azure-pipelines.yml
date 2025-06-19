@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: LocalWindows  # Your self-hosted agent name
+  name: LocalWindows  # Name of your self-hosted agent
 
 variables:
 - group: SonarQube
@@ -16,7 +16,15 @@ variables:
 steps:
 - checkout: self
 
-# 🔧 Gradle Build and SonarQube Analysis
+# 🧹 Fix: Clean old reports to prevent permission error
+- task: PowerShell@2
+  displayName: 'Clean build/reports (to fix permission issues)'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Remove-Item -Path "$(System.DefaultWorkingDirectory)\src\build\reports" -Recurse -Force -ErrorAction SilentlyContinue
+
+# 🔧 Build + SonarQube Analysis
 - task: Gradle@2
   displayName: 'Gradle Build and SonarQube Analysis'
   inputs:
@@ -28,6 +36,7 @@ steps:
       -Dsonar.projectName=$(SONARQUBE_PROJECT_NAME)
       -Dsonar.host.url=$(SONARQUBE_HOST_URL)
       -Dsonar.token=$(SONARQUBE_TOKEN)
+      -Dsonar.gradle.skipCompile=true
 
 # 📄 Generate Code Coverage Report
 - task: ReportGenerator@5
@@ -37,14 +46,14 @@ steps:
     targetdir: 'coverage-report'
     reporttypes: 'Html'
 
-# ⬆️ Publish the coverage report as pipeline artifact
+# ⬆️ Publish Code Coverage as Artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Coverage Report'
   inputs:
     pathToPublish: 'coverage-report'
     artifactName: 'CodeCoverageReport'
 
-# 🐳 Build Docker image (from src/)
+# 🐳 Docker Build
 - task: Docker@2
   displayName: 'Build Docker Image'
   inputs:
@@ -57,7 +66,7 @@ steps:
       latest
       $(Build.BuildId)
 
-# 📤 Push Docker image to Docker Hub
+# 🚀 Docker Push
 - task: Docker@2
   displayName: 'Push Docker Image'
   inputs:

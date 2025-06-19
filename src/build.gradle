@@ -55,7 +55,6 @@ dependencies {
   developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
-  testImplementation 'org.springframework.boot:testcontainers'
   testImplementation 'org.springframework.boot:spring-boot-docker-compose'
   testImplementation 'org.testcontainers:junit-jupiter'
   testImplementation 'org.testcontainers:mysql'
@@ -66,7 +65,7 @@ dependencies {
 
 tasks.named('test') {
   useJUnitPlatform()
-  finalizedBy 'jacocoTestReport'  // Ensures JaCoCo report runs after tests
+  finalizedBy 'jacocoTestReport'
 }
 
 checkstyle {
@@ -79,11 +78,8 @@ checkstyleNohttp {
   configFile = file('src/checkstyle/nohttp-checkstyle.xml')
 }
 
-tasks.named("formatMain").configure { dependsOn("checkstyleMain") }
-tasks.named("formatMain").configure { dependsOn("checkstyleNohttp") }
-
-tasks.named("formatTest").configure { dependsOn("checkstyleTest") }
-tasks.named("formatTest").configure { dependsOn("checkstyleNohttp") }
+tasks.named("formatMain").configure { dependsOn("checkstyleMain", "checkstyleNohttp") }
+tasks.named("formatTest").configure { dependsOn("checkstyleTest", "checkstyleNohttp") }
 
 checkstyleAot.enabled = false
 checkstyleAotTest.enabled = false
@@ -96,11 +92,11 @@ jacoco {
   toolVersion = "0.8.10"
 }
 
-tasks.register('jacocoTestReport', JacocoReport) {
+tasks.named('jacocoTestReport') {
   dependsOn tasks.test
   reports {
-    xml.required = true
-    html.required = true
+    xml.required.set(true)
+    html.required.set(true)
   }
   sourceDirectories.setFrom files(sourceSets.main.allSource.srcDirs)
   classDirectories.setFrom files(sourceSets.main.output)
