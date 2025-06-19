@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: LocalWindows  # Name of your self-hosted agent
+  name: LocalWindows  # Your self-hosted agent pool
 
 variables:
 - group: SonarQube
@@ -14,17 +14,30 @@ variables:
   value: 'http://localhost:9000'
 
 steps:
+# ✅ Checkout code properly
 - checkout: self
+  persistCredentials: true
 
-# 🧹 Fix: Clean old reports to prevent permission error
+# 🧹 Fix: Clean build reports to prevent permission errors (like access denied)
 - task: PowerShell@2
-  displayName: 'Clean build/reports (to fix permission issues)'
+  displayName: 'Clean build/reports and remove file locks'
   inputs:
     targetType: 'inline'
     script: |
-      Remove-Item -Path "$(System.DefaultWorkingDirectory)\src\build\reports" -Recurse -Force -ErrorAction SilentlyContinue
+      $folder = "$(System.DefaultWorkingDirectory)\src\build\reports"
+      if (Test-Path $folder) {
+        attrib -R "$folder\*" -Recurse
+        Remove-Item -Path $folder -Recurse -Force -ErrorAction SilentlyContinue
+      }
 
-# 🔧 Build + SonarQube Analysis
+# 🛠️ Optional fallback: Set Git remote manually if not found
+- script: |
+    git remote add origin https://github.com/InnocentPerson/devops-pipeline-demo.git
+    git fetch
+  displayName: 'Fix Git Remote (only if needed)'
+  condition: failed()
+
+# 🔧 Gradle Build + SonarQube Analysis
 - task: Gradle@2
   displayName: 'Gradle Build and SonarQube Analysis'
   inputs:
@@ -46,7 +59,7 @@ steps:
     targetdir: 'coverage-report'
     reporttypes: 'Html'
 
-# ⬆️ Publish Code Coverage as Artifact
+# ⬆️ Publish Code Coverage Report as Artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Coverage Report'
   inputs:
