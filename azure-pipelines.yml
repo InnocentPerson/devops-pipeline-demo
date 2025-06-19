@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: LocalWindows  # Your self-hosted agent name
+  name: LocalWindows  # Your self-hosted agent
 
 variables:
 - group: SonarQube  # Secure variable group containing SONARQUBE_TOKEN
@@ -16,7 +16,13 @@ variables:
 steps:
 - checkout: self
 
-# Build using Gradle Wrapper and run SonarQube analysis
+# 🧪 Mend Bolt - Security Scan (scans src/ folder)
+- task: WhiteSource Bolt@20
+  displayName: 'Mend Bolt - Security Scan'
+  inputs:
+    cwd: 'src'
+
+# 🧱 Gradle Build + SonarQube Analysis
 - task: Gradle@2
   displayName: 'Gradle Build and SonarQube Analysis'
   inputs:
@@ -29,23 +35,39 @@ steps:
       -Dsonar.host.url=$(SONARQUBE_HOST_URL)
       -Dsonar.token=$(SONARQUBE_TOKEN)
 
-# Build Docker image
+# 📄 Generate Code Coverage Report from JaCoCo XML
+- task: ReportGenerator@5
+  displayName: 'Generate Code Coverage Report'
+  inputs:
+    reports: 'src/build/reports/jacoco/test/jacocoTestReport.xml'
+    targetdir: 'coverage-report'
+    reporttypes: 'Html'
+
+# 📤 Publish Coverage Report as Artifact
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Coverage Report'
+  inputs:
+    pathToPublish: 'coverage-report'
+    artifactName: 'CodeCoverageReport'
+
+# 🐳 Docker Build (assumes Dockerfile is in src/)
 - task: Docker@2
   displayName: 'Build Docker Image'
   inputs:
-    containerRegistry: docker-hub-creds  # Replace with your Azure DevOps service connection name
-    repository: 'striverr/devops-pipeline-demo'  # Docker Hub repo name
+    containerRegistry: docker-hub-creds
+    repository: 'striverr/devops-pipeline-demo'
     command: 'build'
-    Dockerfile: 'Dockerfile'
+    Dockerfile: 'src/Dockerfile'
+    buildContext: 'src'
     tags: |
       latest
       $(Build.BuildId)
 
-# Push Docker image to Docker Hub
+# 🚀 Push Docker Image to Docker Hub
 - task: Docker@2
   displayName: 'Push Docker Image'
   inputs:
-    containerRegistry: docker-hub-creds  # Replace with your service connection name
+    containerRegistry: docker-hub-creds
     repository: 'striverr/devops-pipeline-demo'
     command: 'push'
     tags: |

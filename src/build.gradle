@@ -1,7 +1,5 @@
-    
-
-
 plugins {
+  id 'jacoco'
   id 'java'
   id 'org.springframework.boot' version '3.5.0'
   id 'io.spring.dependency-management' version '1.1.7'
@@ -9,7 +7,7 @@ plugins {
   id 'org.cyclonedx.bom' version '2.3.1'
   id 'io.spring.javaformat' version '0.0.46'
   id "io.spring.nohttp" version "0.0.11"
-  id "org.sonarqube" version "4.4.1.3373" // Or latest
+  id "org.sonarqube" version "4.4.1.3373"
 }
 
 apply plugin: 'java'
@@ -36,9 +34,7 @@ ext.webjarsFontawesomeVersion = "4.7.0"
 ext.webjarsBootstrapVersion = "5.3.6"
 
 dependencies {
-  // Workaround for AOT issue (https://github.com/spring-projects/spring-framework/pull/33949) -->
   implementation 'io.projectreactor:reactor-core'
-
   implementation 'org.springframework.boot:spring-boot-starter-cache'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
   implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -46,6 +42,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-validation'
   implementation 'javax.cache:cache-api'
   implementation 'jakarta.xml.bind:jakarta.xml.bind-api'
+
   runtimeOnly 'org.springframework.boot:spring-boot-starter-actuator'
   runtimeOnly "org.webjars:webjars-locator-lite:${webjarsLocatorLiteVersion}"
   runtimeOnly "org.webjars.npm:bootstrap:${webjarsBootstrapVersion}"
@@ -54,18 +51,22 @@ dependencies {
   runtimeOnly 'com.h2database:h2'
   runtimeOnly 'com.mysql:mysql-connector-j'
   runtimeOnly 'org.postgresql:postgresql'
+
   developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
-  testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+  testImplementation 'org.springframework.boot:testcontainers'
   testImplementation 'org.springframework.boot:spring-boot-docker-compose'
   testImplementation 'org.testcontainers:junit-jupiter'
   testImplementation 'org.testcontainers:mysql'
+
   checkstyle "io.spring.javaformat:spring-javaformat-checkstyle:${springJavaformatCheckstyleVersion}"
   checkstyle "com.puppycrawl.tools:checkstyle:${checkstyleVersion}"
 }
 
 tasks.named('test') {
   useJUnitPlatform()
+  finalizedBy 'jacocoTestReport'  // Ensures JaCoCo report runs after tests
 }
 
 checkstyle {
@@ -86,9 +87,22 @@ tasks.named("formatTest").configure { dependsOn("checkstyleNohttp") }
 
 checkstyleAot.enabled = false
 checkstyleAotTest.enabled = false
-
 checkFormatAot.enabled = false
 checkFormatAotTest.enabled = false
-
 formatAot.enabled = false
 formatAotTest.enabled = false
+
+jacoco {
+  toolVersion = "0.8.10"
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+  dependsOn tasks.test
+  reports {
+    xml.required = true
+    html.required = true
+  }
+  sourceDirectories.setFrom files(sourceSets.main.allSource.srcDirs)
+  classDirectories.setFrom files(sourceSets.main.output)
+  executionData.setFrom fileTree(buildDir).include("/jacoco/test.exec")
+}
